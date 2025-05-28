@@ -1,0 +1,139 @@
+Olá, Copilot! Quero desenvolver um sistema de Help Desk para uma escola técnica utilizando PHP orientado a objetos e MySQL (XAMPP). O objetivo é formalizar e organizar o processo de solicitação e atendimento de suporte técnico.
+
+**Tecnologias e Estrutura:**
+*   **PHP:** Versão 7.4 ou superior, com forte ênfase em Orientação a Objetos.
+*   **MySQL:** Utilizar o esquema de banco de dados que fornecerei separadamente (já criado). Usar PDO para todas as interações com o banco de dados para segurança e flexibilidade.
+*   **Servidor:** XAMPP (Apache + MySQL).
+*   **Interface:** HTML5, CSS3. Considere usar Bootstrap 5 para um design responsivo e moderno de forma rápida.
+*   **Estrutura de Pastas Sugerida:**
+    *   `/` (raiz do projeto)
+        *   `config/` (config.php para constantes, db.php para conexão com BD)
+        *   `src/` (ou `classes/`)
+            *   `Models/` (Usuario.php, Chamado.php, Categoria.php, Setor.php, Status.php, etc. - classes que representam entidades do BD e interagem com ele)
+            *   `Controllers/` (AuthController.php, ChamadoController.php, AdminController.php, UsuarioController.php - lógica de negócio e interação entre Models e Views)
+            *   `Core/` (Database.php para wrapper PDO, Session.php para gerenciamento de sessão, Router.php - opcional, para rotas amigáveis)
+        *   `public/` (acessível via web)
+            *   `index.php` (ponto de entrada principal, roteador)
+            *   `css/`
+            *   `js/`
+            *   `assets/` (imagens, etc.)
+        *   `views/` (ou `templates/`)
+            *   `layouts/` (header.php, footer.php, sidebar_admin.php, sidebar_tecnico.php, sidebar_solicitante.php)
+            *   `auth/` (login.php)
+            *   `admin/` (dashboard.php, usuarios_list.php, usuarios_form.php, categorias_list.php, etc.)
+            *   `tecnico/` (dashboard.php, chamados_list.php, chamado_detail.php)
+            *   `solicitante/` (dashboard.php, chamados_form.php, chamados_list.php, chamado_detail.php)
+            *   `chamados/` (chamado_view_shared.php - para detalhes que podem ser vistos por múltiplos perfis)
+*   **Segurança:** Implementar proteção contra XSS (htmlspecialchars) e SQL Injection (usando prepared statements do PDO). Senhas devem ser armazenadas com hash (password_hash e password_verify).
+
+**Requisitos Funcionais Detalhados:**
+
+**1. Usuários e Autenticação:**
+    *   **Tipos de Usuário:**
+        *   **Administrador:** Controle total.
+        *   **Técnico:** Atende chamados.
+        *   **Solicitante:** Abre e acompanha chamados.
+    *   **Login:** Página de login (email e senha).
+    *   **Sessão:** Manter usuário logado usando sessões PHP. Redirecionar para login se não autenticado.
+    *   **Logout:** Funcionalidade de sair do sistema.
+    *   **Permissões:** Cada tipo de usuário terá acesso a funcionalidades específicas. Criar um sistema de verificação de permissão (ex: `if (Session::getUserRole() === 'Administrador') { ... }`).
+
+**2. Classes Principais (Modelos e Core):**
+    *   `Database.php`: Classe para encapsular a conexão PDO e métodos para executar queries (select, insert, update, delete).
+    *   `Session.php`: Classe para gerenciar sessões (iniciar, definir/obter/remover variáveis de sessão, verificar login, obter dados do usuário logado).
+    *   `Usuario.php` (Model):
+        *   Propriedades: id, nome_completo, email, senha_hash, tipo_usuario_id, setor_id, ativo.
+        *   Métodos CRUD básicos (findById, findAll, save, update, delete - soft delete preferencialmente `ativo=false`).
+        *   Método `findByEmail(string $email)`.
+        *   Método `verifyPassword(string $password): bool`.
+    *   `Chamado.php` (Model):
+        *   Propriedades: id, titulo, descricao, solicitante_id, tecnico_id, categoria_id, setor_problema_id, status_id, prioridade, data_abertura, data_ultima_atualizacao, data_fechamento, solucao.
+        *   Métodos CRUD.
+        *   Métodos para buscar chamados por solicitante, técnico, status, categoria, período.
+    *   `Categoria.php` (Model): CRUD para `categorias_atendimento`.
+    *   `Setor.php` (Model): CRUD para `setores`.
+    *   `Status.php` (Model): Apenas para buscar `status_chamado` (findAll, findById).
+
+**3. Funcionalidades por Tipo de Usuário:**
+
+    **A. Solicitante (Funcionário/Professor):**
+        *   **Dashboard:** Visão geral simples, link para abrir chamado e lista de seus chamados recentes.
+        *   **Abrir Chamado:** Formulário para criar um novo chamado:
+            *   Campos: Título, Descrição (detalhada), Categoria (dropdown), Setor do Problema (dropdown).
+            *   Prioridade pode ser definida pelo sistema ou deixada para o técnico/admin ajustar.
+            *   Ao salvar, `solicitante_id` é o ID do usuário logado, `status_id` inicial como "Aberto".
+        *   **Meus Chamados:** Listar todos os chamados abertos por ele.
+            *   Colunas: ID, Título, Categoria, Status, Data de Abertura, Técnico Atribuído (se houver).
+            *   Filtros: por Status, por Período.
+            *   Visualizar Detalhes do Chamado: Ver todas as informações do chamado, incluindo solução (se houver) e histórico de atualizações (se implementado `chamados_historico`).
+        *   **Atualizar Perfil:** Poder editar nome, (talvez) e-mail e senha.
+
+    **B. Técnico:**
+        *   **Dashboard:** Visão geral dos chamados atribuídos a ele, chamados abertos recentes não atribuídos.
+        *   **Meus Chamados Atribuídos:** Listar chamados que foram explicitamente atribuídos a ele.
+            *   Filtros: por Status, Prioridade, Categoria, Data.
+        *   **Visualizar e Atender Chamado:**
+            *   Ver detalhes completos do chamado.
+            *   **Atualizar Status:** Mudar o status do chamado (Ex: de "Aberto" para "Em Atendimento", de "Em Atendimento" para "Resolvido" ou "Aguardando Solicitante").
+            *   **Registrar Solução:** Ao marcar como "Resolvido" ou "Fechado", adicionar um campo para descrever a solução aplicada.
+            *   **Adicionar Comentários/Atualizações:** (Se `chamados_historico` for usado) Registrar passos intermediários ou pedidos de mais informação ao solicitante.
+        *   **(Opcional) Assumir Chamado:** Ver lista de chamados "Abertos" sem técnico e se auto-atribuir.
+        *   **Atualizar Perfil:** Poder editar nome, e-mail e senha.
+
+    **C. Administrador:**
+        *   **Dashboard:** Visão geral completa: total de chamados, chamados abertos, chamados por técnico, etc. Gráficos simples seriam um bônus.
+        *   **Gerenciamento de Usuários:**
+            *   CRUD completo para usuários (criar, listar, editar, desativar/ativar, excluir).
+            *   Ao criar/editar, definir `nome_completo`, `email`, `senha` (resetar senha), `tipo_usuario_id`, `setor_id`.
+        *   **Gerenciamento de Categorias de Atendimento:** CRUD completo.
+        *   **Gerenciamento de Setores:** CRUD completo.
+        *   **Gerenciamento de Chamados:**
+            *   Visualizar TODOS os chamados.
+            *   Filtros avançados: por Solicitante, Técnico, Status, Categoria, Setor, Prioridade, Período.
+            *   **Atribuir Técnico:** Designar um técnico para um chamado "Aberto".
+            *   Editar qualquer campo de um chamado (com cautela).
+            *   Excluir chamado (com confirmação, registrar quem excluiu se possível).
+        *   **Relatórios:**
+            *   Chamados por período (ex: últimos 7 dias, 30 dias, customizado).
+            *   Chamados por categoria.
+            *   Chamados por status.
+            *   Chamados por técnico.
+            *   Tempo médio de resolução (bônus).
+            *   **Exportar Relatórios para PDF:** (Sugerir uso de bibliotecas como FPDF ou TCPDF). Inicialmente, pode ser uma tabela HTML bem formatada para impressão.
+        *   **Atualizar Perfil:** Poder editar nome, e-mail e senha.
+
+**Fluxo de Interação Sugerido (Exemplo de Caso de Uso):**
+
+1.  **Professor (Solicitante)** acessa `login.php`, insere credenciais.
+2.  É redirecionado para `public/index.php?page=solicitante_dashboard`.
+3.  Clica em "Abrir Chamado" (`public/index.php?page=chamado_form`).
+4.  Preenche: "Projetor da sala 202 não liga", Categoria "Projetor", Setor "Sala 202". Submete.
+5.  `ChamadoController::criarChamado()` é chamado, valida dados, cria registro no BD com status "Aberto".
+6.  **Administrador** acessa `login.php`, insere credenciais.
+7.  É redirecionado para `public/index.php?page=admin_dashboard`.
+8.  Visualiza lista de chamados abertos (`public/index.php?page=admin_chamados_list&status=aberto`).
+9.  Encontra o chamado do projetor, clica em "Atribuir Técnico". Seleciona um técnico da lista e salva.
+10. `ChamadoController::atribuirTecnico()` atualiza o `tecnico_id` no chamado.
+11. **Técnico** acessa `login.php`, insere credenciais.
+12. É redirecionado para `public/index.php?page=tecnico_dashboard` ou `public/index.php?page=tecnico_chamados_list&atribuidos=mim`.
+13. Vê o chamado "Projetor da sala 202 não liga" atribuído a ele.
+14. Clica para ver detalhes (`public/index.php?page=chamado_detail&id=X`).
+15. Atualiza status para "Em Atendimento". Vai até a sala.
+16. Resolve o problema (ex: cabo estava solto).
+17. Volta ao sistema, atualiza o status para "Resolvido" e preenche o campo "Solução": "Cabo de energia do projetor estava desconectado. Reconectado e testado."
+18. `ChamadoController::atualizarChamado()` salva as alterações, incluindo a solução e `data_fechamento`.
+19. **Solicitante** pode ver o status "Resolvido" e a solução em "Meus Chamados".
+20. **Administrador** pode gerar um relatório de chamados resolvidos no mês e ver este chamado incluído.
+
+**Por onde começar, Copilot?**
+
+1.  Crie a estrutura básica de pastas.
+2.  Implemente `config/config.php` (para constantes como `BASE_URL`) e `src/Core/Database.php` com a conexão PDO.
+3.  Implemente `src/Core/Session.php`.
+4.  Crie as classes Model `Usuario.php` e `Chamado.php` com propriedades básicas e construtor.
+5.  Desenvolva a página `views/auth/login.php` e o `AuthController.php` com a lógica de login (verificando contra o BD usando `Usuario::findByEmail()` e `password_verify()`) e logout.
+6.  Crie o `public/index.php` como um roteador simples (usando `$_GET['page']` inicialmente) que inclua header, o conteúdo da view específica e footer. Proteja as páginas para que exijam login.
+
+Vamos construir isso passo a passo. Comece com os itens acima e me mostre o código. Estou pronto para testar e refinar.
+Lembre-se de adicionar comentários no código PHP para explicar a lógica.
+Obrigado!
