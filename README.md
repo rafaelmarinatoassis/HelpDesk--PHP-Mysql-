@@ -74,7 +74,7 @@ O sistema conta com três tipos de usuários, cada um com suas permissões e fun
 
 1.  **Clone o repositório:**
     ```bash
-    git clone https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git
+    git clone https://github.com/rafaelmarinatoassis/HelpDesk--PHP-Mysql-.git
     cd SEU_REPOSITORIO
     ```
 2.  **Configure o XAMPP:**
