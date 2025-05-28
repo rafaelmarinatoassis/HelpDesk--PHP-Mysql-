@@ -1,4 +1,4 @@
-Olá, Copilot! Quero desenvolver um sistema de Help Desk para uma escola técnica utilizando PHP orientado a objetos e MySQL (XAMPP). O objetivo é formalizar e organizar o processo de solicitação e atendimento de suporte técnico.
+Sistema de Help Desk para uma escola técnica utilizando PHP orientado a objetos e MySQL (XAMPP). O objetivo é formalizar e organizar o processo de solicitação e atendimento de suporte técnico.
 
 **Tecnologias e Estrutura:**
 *   **PHP:** Versão 7.4 ou superior, com forte ênfase em Orientação a Objetos.
